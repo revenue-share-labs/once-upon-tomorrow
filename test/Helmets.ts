@@ -20,7 +20,7 @@ describe("Helmets", function () {
     const [owner, otherAccount] = await hre.ethers.getSigners();
 
 
-    const Helmets = await hre.ethers.getContractFactory("Helmets");
+    const Helmets = await hre.ethers.getContractFactory("OnceUponTomorrow");
     const helmets = await Helmets.deploy(NAME, SYMBOL, MAX_NFT_SUPPLY);
 
     return { helmets, owner, otherAccount };
