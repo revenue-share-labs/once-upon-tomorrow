@@ -1,20 +1,18 @@
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Royalty.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 pragma solidity ^0.8.20;
 
 /**
- * @title Helmet contract
- * @dev Extends ERC721 Non-Fungible Token Standard basic implementation
+ * @title Once Upon Tomorrow contract
  */
-contract Helmets is ERC721Enumerable, Ownable {
+contract OnceUponTomorrow is ERC721Enumerable, ERC721Royalty, Ownable {
     uint256 public helmetPrice = 0.05 ether; //0.05 ETH
-
     uint public constant maxHelmetPurchase = 10;
-
     uint256 public MAX_HELMETS;
-
     bool public saleIsActive = false;
+    uint96 public constant ROYALTY_FACTOR = 400; // 4%
 
     constructor(
         string memory name,
@@ -33,17 +31,6 @@ contract Helmets is ERC721Enumerable, Ownable {
         return "https://nft.rsclabs.io/nft/once-upon-tomorrow/meta/";
     }
 
-    /**
-     * Set some Bored Helmets aside
-     */
-    function reserveHelmets() public onlyOwner {
-        uint supply = totalSupply();
-        uint i;
-        for (i = 0; i < 30; i++) {
-            _safeMint(msg.sender, supply + i);
-        }
-    }
-
     function setHelmetPrice(uint256 price) public onlyOwner {
         helmetPrice = price;
     }
@@ -56,7 +43,7 @@ contract Helmets is ERC721Enumerable, Ownable {
     }
 
     /**
-     * Mints Helmets
+     * Mint Helmets
      */
     function mintHelmets(uint numberOfTokens) public payable {
         require(saleIsActive, "Sale must be active to mint Helmet");
@@ -77,7 +64,33 @@ contract Helmets is ERC721Enumerable, Ownable {
             uint mintIndex = totalSupply();
             if (totalSupply() < MAX_HELMETS) {
                 _safeMint(msg.sender, mintIndex);
+                _setTokenRoyalty(mintIndex, msg.sender, ROYALTY_FACTOR);
             }
         }
+    }
+
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view override(ERC721Enumerable, ERC721Royalty) returns (bool) {
+        return
+            ERC721Enumerable.supportsInterface(interfaceId) ||
+            ERC721Royalty.supportsInterface(interfaceId) ||
+            ERC721.supportsInterface(interfaceId) ||
+            super.supportsInterface(interfaceId);
+    }
+
+    function _increaseBalance(
+        address account,
+        uint128 amount
+    ) internal override(ERC721, ERC721Enumerable) {
+        ERC721Enumerable._increaseBalance(account, amount);
+    }
+
+    function _update(
+        address to,
+        uint256 tokenId,
+        address auth
+    ) internal override(ERC721, ERC721Enumerable) returns (address) {
+        return ERC721Enumerable._update(to, tokenId, auth);
     }
 }

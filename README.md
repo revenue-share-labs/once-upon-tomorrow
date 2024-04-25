@@ -8,7 +8,7 @@ npx hardhat test
 
 ## Deploy Helmets
 ```shell
-npx hardhat ignition deploy ./ignition/modules/Helmets.ts --network <network>
+npx hardhat ignition deploy ./ignition/modules/OnceUponTomorrow.ts --network <network>
 ```
 
 ## Verify contract
