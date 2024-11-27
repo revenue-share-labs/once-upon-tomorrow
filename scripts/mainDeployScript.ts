@@ -3,9 +3,13 @@ import hardhatRuntimeEnvironment from 'hardhat';
 import mainStage from '../stages/Main.stage';
 
 async function main(hre: any) {
-  const [owner, proxyAdminOwner] = await hre.ethers.getSigners();
-  const ownerAddr = await owner.getAddress();
-  const proxyAdminOwnerAddr = await proxyAdminOwner.getAddress();
+  const signers = await hre.ethers.getSigners();
+
+  if (signers.length >= 2) {
+    console.log(`ProxyAdmin owner address: ${await signers[1].getAddress()}`);
+  }
+
+  const ownerAddr = await signers[0].getAddress();
 
   const name = "Once Upon Tomorrow";
     const symbol = "OUT";
@@ -20,7 +24,6 @@ async function main(hre: any) {
 
   console.log(`Helmets address: ${await onceUponTomorrow.getAddress()}`);
   console.log(`Owner address: ${ownerAddr}`);
-  console.log(`ProxyAdmin owner address: ${proxyAdminOwnerAddr}`);
 }
 
 main(hardhatRuntimeEnvironment).catch(console.error);

@@ -5,6 +5,10 @@ node_modules
 /cache
 /artifacts
 
+# ZK files
+/artifacts-zk
+/cache-zk
+
 # TypeChain files
 /typechain
 /typechain-types

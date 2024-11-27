@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import { Address } from '@openzeppelin/contracts/utils/Address.sol';
 import { ERC721Enumerable, ERC721 } from '@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol';
 import { ERC721Royalty } from '@openzeppelin/contracts/token/ERC721/extensions/ERC721Royalty.sol';
 import { Ownable } from '@openzeppelin/contracts/access/Ownable.sol';
@@ -32,13 +33,13 @@ contract OnceUponTomorrow is ERC721Enumerable, ERC721Royalty, Ownable {
     /// @param name Name of the ERC721 token.
     /// @param symbol Symbol of the ERC721 token.
     /// @param maxNftSupply Maximum supply of the helmet tokens.
-    constructor(string memory name, string memory symbol, uint256 maxNftSupply) ERC721(name, symbol) Ownable(msg.sender) {
+    constructor(string memory name, string memory symbol, uint256 maxNftSupply) ERC721(name, symbol) Ownable(_msgSender()) {
         MAX_HELMETS = maxNftSupply;
     }
 
     /// @notice Withdraws the balance of the contract to the owner's address.
     function withdraw() external onlyOwner {
-        payable(msg.sender).transfer(address(this).balance);
+        Address.sendValue(payable(_msgSender()), address(this).balance);
     }
 
     /// @notice Sets the price of a helmet token.
@@ -64,8 +65,8 @@ contract OnceUponTomorrow is ERC721Enumerable, ERC721Royalty, Ownable {
         for (uint256 i = 0; i < numberOfTokens; i++) {
             uint256 mintIndex = totalSupply();
             if (totalSupply() < MAX_HELMETS) {
-                _safeMint(msg.sender, mintIndex);
-                _setTokenRoyalty(mintIndex, msg.sender, ROYALTY_FACTOR);
+                _safeMint(_msgSender(), mintIndex);
+                _setTokenRoyalty(mintIndex, _msgSender(), ROYALTY_FACTOR);
             }
         }
     }

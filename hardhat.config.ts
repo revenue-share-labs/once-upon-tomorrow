@@ -1,9 +1,12 @@
 import { extendEnvironment, task } from 'hardhat/config';
 import { HardhatUserConfig } from 'hardhat/types';
+import '@matterlabs/hardhat-zksync';
+import "@matterlabs/hardhat-zksync-solc";
+import "@matterlabs/hardhat-zksync-ethers";
 import '@nomicfoundation/hardhat-ignition-ethers';
-import '@nomicfoundation/hardhat-toolbox';
 import dotenv from 'dotenv';
 import 'hardhat-contract-sizer';
+import 'hardhat-gas-reporter';
 import 'hardhat-tracer';
 import 'hardhat-docgen';
 
@@ -40,8 +43,9 @@ const config: HardhatUserConfig = {
     },
     hardhat: {
       accounts: {
-        count: 200, // Numbers of account to create. We need to increment it for use in tests like signers
+        count: 10, // Numbers of account to create. We need to increment it for use in tests like signers
       },
+      zksync: true,
     },
     zkSyncSepoliaTestnet: {
       url: "https://sepolia.era.zksync.dev",
@@ -65,7 +69,7 @@ const config: HardhatUserConfig = {
       ethNetwork: "", // in-memory node doesn't support eth node; removing this line will cause an error
       zksync: true,
     },
-    hardhat_zk: {
+    hardhatZk: {
       url: "http://127.0.0.1:8011/",
       zksync: true,
       ethNetwork: "sepolia",
@@ -83,6 +87,11 @@ const config: HardhatUserConfig = {
     settings: {
       // find all available options in the official documentation
       // https://docs.zksync.io/build/tooling/hardhat/hardhat-zksync-solc#configuration
+      optimizer: {
+        enabled: true, // optional. True by default
+        mode: 'z', // optional. 3 by default, z to optimize bytecode size
+        fallback_to_optimizing_for_size: true, // optional. Try to recompile with optimizer mode "z" if the bytecode is too large
+      },
     },
   },
   etherscan: {
