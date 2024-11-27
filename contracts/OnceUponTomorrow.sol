@@ -1,77 +1,80 @@
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Royalty.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
 
-pragma solidity ^0.8.20;
+import { Address } from '@openzeppelin/contracts/utils/Address.sol';
+import { ERC721Enumerable, ERC721 } from '@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol';
+import { ERC721Royalty } from '@openzeppelin/contracts/token/ERC721/extensions/ERC721Royalty.sol';
+import { Ownable } from '@openzeppelin/contracts/access/Ownable.sol';
 
-/**
- * @title Once Upon Tomorrow contract
- */
+/// @title Once Upon Tomorrow contract.
 contract OnceUponTomorrow is ERC721Enumerable, ERC721Royalty, Ownable {
-    uint256 public helmetPrice = 0.05 ether; //0.05 ETH
-    uint public constant maxHelmetPurchase = 10;
-    uint256 public MAX_HELMETS;
-    bool public saleIsActive = false;
-    uint96 public constant ROYALTY_FACTOR = 400; // 4%
+    /// @notice Maximum number of tokens a user can purchase in a single transaction.
+    uint256 public constant MAX_HELMET_PURCHASE = 10;
+    /// @notice Royalty factor for secondary sales, expressed as a percentage scaled by 10000 (e.g., 4% = 400).
+    uint96 public constant ROYALTY_FACTOR = 400; // 4%.
 
-    constructor(
-        string memory name,
-        string memory symbol,
-        uint256 maxNftSupply
-    ) ERC721(name, symbol) Ownable(msg.sender) {
+    /// @notice Maximum supply of helmet tokens.
+    uint256 public immutable MAX_HELMETS;
+
+    /// @notice Price per helmet token in Wei.
+    uint256 public helmetPrice = 0.05 ether;
+    /// @notice Indicates whether the sale is active.
+    bool public saleIsActive;
+
+    /// @dev For inactive sales.
+    error SaleInactive();
+    /// @dev For exceeding the maximum allowed tokens in a single transaction.
+    error MaxPurchaseExceeded(uint256 requested, uint256 maxAllowed);
+    /// @dev For exceeding the maximum token supply.
+    error MaxSupplyExceeded(uint256 requested, uint256 available);
+    /// @dev For insufficient Ether sent.
+    error InsufficientPayment(uint256 required, uint256 provided);
+
+    /// @param name Name of the ERC721 token.
+    /// @param symbol Symbol of the ERC721 token.
+    /// @param maxNftSupply Maximum supply of the helmet tokens.
+    constructor(string memory name, string memory symbol, uint256 maxNftSupply) ERC721(name, symbol) Ownable(_msgSender()) {
         MAX_HELMETS = maxNftSupply;
     }
 
-    function withdraw() public onlyOwner {
-        uint balance = address(this).balance;
-        payable(msg.sender).transfer(balance);
+    /// @notice Withdraws the balance of the contract to the owner's address.
+    function withdraw() external onlyOwner {
+        Address.sendValue(payable(_msgSender()), address(this).balance);
     }
 
-    function _baseURI() internal pure override returns (string memory) {
-        return "https://nft.rsclabs.io/nft/once-upon-tomorrow/meta/";
-    }
-
-    function setHelmetPrice(uint256 price) public onlyOwner {
+    /// @notice Sets the price of a helmet token.
+    /// @param price The new price in Wei.
+    function setHelmetPrice(uint256 price) external onlyOwner {
         helmetPrice = price;
     }
 
-    /*
-     * Pause sale if active, make active if paused
-     */
-    function flipSaleState() public onlyOwner {
+    /// @notice Toggles the sale state between active and inactive.
+    function flipSaleState() external onlyOwner {
         saleIsActive = !saleIsActive;
     }
 
-    /**
-     * Mint Helmets
-     */
-    function mintHelmets(uint numberOfTokens) public payable {
-        require(saleIsActive, "Sale must be active to mint Helmet");
-        require(
-            numberOfTokens <= maxHelmetPurchase,
-            "Can only mint 10 tokens at a time"
-        );
-        require(
-            totalSupply() + numberOfTokens <= MAX_HELMETS,
-            "Purchase would exceed max supply of Helmets"
-        );
-        require(
-            helmetPrice * numberOfTokens <= msg.value,
-            "Ether value sent is not correct"
-        );
+    /// @notice Mints a specified number of helmet tokens to the caller.
+    /// @param numberOfTokens Number of helmet tokens to mint.
+    /// @dev Reverts with custom errors for various invalid states.
+    function mintHelmets(uint256 numberOfTokens) external payable {
+        if (!saleIsActive) revert SaleInactive();
+        if (numberOfTokens > MAX_HELMET_PURCHASE) revert MaxPurchaseExceeded(numberOfTokens, MAX_HELMET_PURCHASE);
+        if (totalSupply() + numberOfTokens > MAX_HELMETS) revert MaxSupplyExceeded(numberOfTokens, MAX_HELMETS - totalSupply());
+        if (helmetPrice * numberOfTokens > msg.value) revert InsufficientPayment(helmetPrice * numberOfTokens, msg.value);
 
-        for (uint i = 0; i < numberOfTokens; i++) {
-            uint mintIndex = totalSupply();
+        for (uint256 i = 0; i < numberOfTokens; i++) {
+            uint256 mintIndex = totalSupply();
             if (totalSupply() < MAX_HELMETS) {
-                _safeMint(msg.sender, mintIndex);
-                _setTokenRoyalty(mintIndex, msg.sender, ROYALTY_FACTOR);
+                _safeMint(_msgSender(), mintIndex);
+                _setTokenRoyalty(mintIndex, _msgSender(), ROYALTY_FACTOR);
             }
         }
     }
 
-    function supportsInterface(
-        bytes4 interfaceId
-    ) public view override(ERC721Enumerable, ERC721Royalty) returns (bool) {
+    /// @notice Checks if the contract supports a given interface.
+    /// @param interfaceId Interface ID to check.
+    /// @return True if the interface is supported, false otherwise.
+    function supportsInterface(bytes4 interfaceId) public view override(ERC721Enumerable, ERC721Royalty) returns (bool) {
         return
             ERC721Enumerable.supportsInterface(interfaceId) ||
             ERC721Royalty.supportsInterface(interfaceId) ||
@@ -79,18 +82,15 @@ contract OnceUponTomorrow is ERC721Enumerable, ERC721Royalty, Ownable {
             super.supportsInterface(interfaceId);
     }
 
-    function _increaseBalance(
-        address account,
-        uint128 amount
-    ) internal override(ERC721, ERC721Enumerable) {
+    function _increaseBalance(address account, uint128 amount) internal override(ERC721, ERC721Enumerable) {
         ERC721Enumerable._increaseBalance(account, amount);
     }
 
-    function _update(
-        address to,
-        uint256 tokenId,
-        address auth
-    ) internal override(ERC721, ERC721Enumerable) returns (address) {
+    function _update(address to, uint256 tokenId, address auth) internal override(ERC721, ERC721Enumerable) returns (address) {
         return ERC721Enumerable._update(to, tokenId, auth);
+    }
+
+    function _baseURI() internal pure override returns (string memory) {
+        return 'https://nft.rsclabs.io/nft/once-upon-tomorrow/meta/';
     }
 }
