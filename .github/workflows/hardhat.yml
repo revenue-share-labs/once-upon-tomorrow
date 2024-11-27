@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    branches:
+      - master
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js 20.10.0
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20.10.0'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Compile contracts (force)
+        run: yarn cf
+        env:
+          ALCHEMY_RPC_PRIVATE_URL: ${{ secrets.ALCHEMY_RPC_PRIVATE_URL }}
+          MAINNET_PRIVATE_KEY: ${{ secrets.MAINNET_PRIVATE_KEY }}
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+          REPORT_GAS: ${{ secrets.REPORT_GAS }}
+
+      - name: TypeScript tests
+        run: yarn tsc
+
+      - name: Run tests
+        run: yarn t
+        env:
+          ALCHEMY_RPC_PRIVATE_URL: ${{ secrets.ALCHEMY_RPC_PRIVATE_URL }}
+          MAINNET_PRIVATE_KEY: ${{ secrets.MAINNET_PRIVATE_KEY }}
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+          REPORT_GAS: ${{ secrets.REPORT_GAS }}
+
+      - name: Test coverage of contracts
+        run: yarn co
+        env:
+          ALCHEMY_RPC_PRIVATE_URL: ${{ secrets.ALCHEMY_RPC_PRIVATE_URL }}
+          MAINNET_PRIVATE_KEY: ${{ secrets.MAINNET_PRIVATE_KEY }}
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+          REPORT_GAS: ${{ secrets.REPORT_GAS }}
