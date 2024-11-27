@@ -41,16 +41,16 @@ describe('Helmets', () => {
     });
 
     it("Mint is not available", async () => {
-      await expect(helmets.mintHelmets(1)).to.be.revertedWith("Sale must be active to mint Helmet");
+      await expect(helmets.mintHelmets(1)).to.be.revertedWithCustomError(helmets, "SaleInactive");
     });
 
-    it("Mint Ether value sent is not correc", async () => {
-      await helmets.flipSaleState()
-      await expect(helmets.mintHelmets(1)).to.be.revertedWith("Ether value sent is not correct");
+    it("Mint Ether value sent is not correct", async () => {
+      await helmets.flipSaleState();
+      await expect(helmets.mintHelmets(1)).to.be.revertedWithCustomError(helmets, "InsufficientPayment");
     });
 
     it("Mint token", async () => {
-      await helmets.flipSaleState()
+      await helmets.flipSaleState();
       await helmets.mintHelmets(3, { value: parseEther("0.15") })
 
       expect(await helmets.tokenURI(0)).to.equal(
@@ -69,18 +69,18 @@ describe('Helmets', () => {
     });
 
     it("Mint max + 1 token amount", async () => {
-      await helmets.flipSaleState()
+      await helmets.flipSaleState();
 
       await expect(helmets.mintHelmets(11, { value: parseEther("0.55") })
-      ).to.be.revertedWith(
-        "Can only mint 10 tokens at a time"
+      ).to.be.revertedWithCustomError(
+        helmets, "MaxPurchaseExceeded"
       );
     });
   });
 
   describe("Withdrawals", () => {
     it("Buy and withdraw", async () => {
-      await helmets.flipSaleState()
+      await helmets.flipSaleState();
       await expect(helmets.mintHelmets(1, { value: parseEther("0.05") })).to.changeEtherBalances(
         [owner, helmets],
         [-parseEther("0.05"), parseEther("0.05")]
