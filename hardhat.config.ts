@@ -83,17 +83,17 @@ const config: HardhatUserConfig = {
       verifyURL: "https://zksync2-mainnet-explorer.zksync.io/contract_verification",
       ...zkSyncDefaultParams
     },
-    dockerizedNode: {
+    dockerizedNode: { // IF THE NAME IS TO BE CHANGED PLEASE MODIFY IT IN .gitignore ALSO!
       url: "http://localhost:3050",
       ethNetwork: "http://localhost:8545",
       ...zkSyncDefaultParams
     },
-    inMemoryNode: {
+    inMemoryNode: { // IF THE NAME IS TO BE CHANGED PLEASE MODIFY IT IN .gitignore ALSO!
       url: "http://127.0.0.1:8011",
       ethNetwork: "", // in-memory node doesn't support eth node; removing this line will cause an error
       ...zkSyncDefaultParams
     },
-    hardhatZk: {
+    hardhatZk: { // IF THE NAME IS TO BE CHANGED PLEASE MODIFY IT IN .gitignore ALSO!
       url: "http://127.0.0.1:8011/",
       ethNetwork: "sepolia",
       ...zkSyncDefaultParams

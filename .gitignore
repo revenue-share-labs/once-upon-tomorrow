@@ -8,7 +8,9 @@ node_modules
 # ZK files
 /artifacts-zk
 /cache-zk
-
+/deployments-zk/dockerizedNode
+/deployments-zk/inMemoryNode
+/deployments-zk/hardhatZk
 
 # TypeChain files
 /typechain
