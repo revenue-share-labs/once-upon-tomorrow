@@ -7,8 +7,9 @@ async function main(hre: any) {
     console.log(`ProxyAdmin owner address: ${await signers[1].getAddress()}`);
   }
   const ownerAddr = await signers[0].getAddress();
-  const deployedContracts: any = await convertStageToFixture(hre, "production")();
-  console.log(`OnceUponTomorrow address: ${await deployedContracts.OnceUponTomorrow.getAddress()}`)
+  const deployedContracts: any = await (convertStageToFixture(hre, "production"))();
+  console.log(`WETH9 address: ${await deployedContracts.WETH9.getAddress()}`);
+  console.log(`OnceUponTomorrow address: ${await deployedContracts.OnceUponTomorrow.getAddress()}`);
   console.log(`Owner address: ${ownerAddr}`);
 }
 
