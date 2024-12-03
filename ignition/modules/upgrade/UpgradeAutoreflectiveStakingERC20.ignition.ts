@@ -1,5 +1,5 @@
 import { buildModule } from '@nomicfoundation/hardhat-ignition/modules';
-import upgradeProxyModuleBuilder from '../../reusables/upgradeProxy.reusable';
+import upgradeProxyModuleBuilder from '../../../scripts/reusables/ignition/upgradeProxy.reusable';
 
 const moduleName = 'UpgradeAutoreflectiveStakingERC20';
 export default buildModule(moduleName, (m) => {

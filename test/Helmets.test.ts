@@ -1,15 +1,15 @@
-import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import hre, { ethers } from 'hardhat';
 import { ZeroAddress, parseEther } from 'ethers';
-import { expect } from 'chai';
+import { expect } from "chai";
 import { loadFixture, time, takeSnapshot, SnapshotRestorer } from '@nomicfoundation/hardhat-network-helpers';
+import { HardhatZksyncSigner } from '@matterlabs/hardhat-zksync-ethers';
 
-import mainFixture from '../fixtures/MainWithMocks.fixture';
 import { OnceUponTomorrow, MockERC20 } from '../typechain-types';
+import { convertStageToFixture } from '../scripts/helpers/zkSync.helper';
 
 describe('Helmets', () => {
   let helmets: OnceUponTomorrow;
-  let owner: SignerWithAddress, proxyAdminOwner: SignerWithAddress, otherAccount: SignerWithAddress;
+  let owner: HardhatZksyncSigner, proxyAdminOwner: HardhatZksyncSigner, otherAccount: HardhatZksyncSigner;
 
   let deployedContracts: any;
   let snapshot: SnapshotRestorer;
@@ -19,7 +19,7 @@ describe('Helmets', () => {
 
   before(async () => {
     [owner, proxyAdminOwner, otherAccount] = await ethers.getSigners();
-    deployedContracts = await loadFixture(mainFixture(hre));
+    deployedContracts = await loadFixture(convertStageToFixture(hre, "General.fixture.ts"));
     helmets = deployedContracts.onceUponTomorrow;
   });
 
