@@ -1,9 +1,11 @@
-import { Contract, Provider, Wallet } from "zksync-ethers";
+import { Provider, Wallet } from "zksync-ethers";
 import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { Deployment, loadDeployment } from "@matterlabs/hardhat-zksync-deploy/dist/deployment-saver";
+import { ZkSyncArtifact } from "@matterlabs/hardhat-zksync-deploy/dist/types";
 
 import "@matterlabs/hardhat-zksync-node/dist/type-extensions";
-import "@matterlabs/hardhat-zksync-verify/dist/src/type-extensions";
+import "@matterlabs/hardhat-zksync-verify/dist/type-extensions";
 
 export enum StagePriority {
   HIGH = 4,
@@ -38,19 +40,29 @@ export const emptyStage = (tag: string, message: string, dependencies: Array<str
 };
 
 export const convertStageToFixture = (
-  hre: HardhatRuntimeEnvironment, 
-  tag: string, 
-  network: string | undefined = undefined // An `undefined` is - to trigger the logic inside deploy-zksync task and deploy `inMemoryMode`.
+  hre: HardhatRuntimeEnvironment,
+  tag: string,
+  network: string | undefined = undefined, // An `undefined` is - to trigger the logic inside deploy-zksync task and deploy `inMemoryMode`.
+  options: DeployContractOptions = { silent: false }
 ) => async () => {
-  const deployedContracts: Array<Contract> = [];
+  const deployedContracts: any = {};
   await hre.run("deploy-zksync", {
     tags: [tag],
     network
   })
   const allArtifacts = await hre.run('getAllArtifacts');
+  const { deployer } = getZkSyncDeployerAndWallet(hre, options);
   for (let i = 0; i < allArtifacts.length; i++) {
-    const artifactName = allArtifacts[i].split(':')[1];
-    deployedContracts[artifactName] = await hre.zksyncEthers.getContractAt(artifactName, "");
+    const artifactName: string = allArtifacts[i].split(':')[1];
+    const zkArtifact: ZkSyncArtifact = await deployer
+      .loadArtifact(artifactName)
+      .catch(catchActionWhenArtifactIsNotFound(artifactName));
+    const artifactDeployment: Deployment | undefined = await loadDeployment(hre, zkArtifact);
+    if (artifactDeployment === undefined) {
+      continue;
+    }
+    const lastDeploymentEntry = artifactDeployment.entries[artifactDeployment.entries.length - 1]; // getting the newest deployment entry
+    deployedContracts[artifactName] = await hre.zksyncEthers.getContractAt(artifactName, lastDeploymentEntry.address);
   }
   return deployedContracts;
 };
@@ -120,15 +132,10 @@ export const verifyContract = async (
   return verificationRequestId;
 };
 
-export const deployContract = async (
+export function getZkSyncDeployerAndWallet(
   hre: HardhatRuntimeEnvironment,
-  contractArtifactName: string,
-  constructorArguments?: any[],
   options: DeployContractOptions = { silent: false }
-) => {
-
-  log(`\nStarting deployment process of "${contractArtifactName}"...`, options);
-
+): { deployer: Deployer, wallet: Wallet } {
   let deployer: Deployer;
   let wallet: Wallet;
   if (options?.wallet !== undefined) {
@@ -138,21 +145,39 @@ export const deployContract = async (
     deployer = hre.deployer as unknown as Deployer;
     wallet = deployer.zkWallet;
   }
+  return {
+    deployer, wallet
+  }
+}
+
+export const catchActionWhenArtifactIsNotFound = (contractArtifactName: string) =>
+  (error: any) => {
+    if (
+      error?.message?.includes(
+        `Artifact for contract "${contractArtifactName}" not found.`
+      )
+    ) {
+      console.error(error.message);
+      throw `⛔️ Please make sure you have compiled your contracts or specified the correct contract name!`;
+    } else {
+      throw error;
+    }
+  }
+
+export const deployContract = async (
+  hre: HardhatRuntimeEnvironment,
+  contractArtifactName: string,
+  constructorArguments?: any[],
+  options: DeployContractOptions = { silent: false }
+) => {
+
+  log(`\nStarting deployment process of "${contractArtifactName}"...`, options);
+
+  const { deployer, wallet } = getZkSyncDeployerAndWallet(hre, options);
 
   const artifact = await deployer
     .loadArtifact(contractArtifactName)
-    .catch((error) => {
-      if (
-        error?.message?.includes(
-          `Artifact for contract "${contractArtifactName}" not found.`
-        )
-      ) {
-        console.error(error.message);
-        throw `⛔️ Please make sure you have compiled your contracts or specified the correct contract name!`;
-      } else {
-        throw error;
-      }
-    });
+    .catch(catchActionWhenArtifactIsNotFound(contractArtifactName));
 
   // Estimate contract deployment fee
   const deploymentFee = await deployer.estimateDeployFee(
