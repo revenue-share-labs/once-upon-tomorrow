@@ -19,7 +19,7 @@ describe('Helmets', () => {
 
   before(async () => {
     [owner, proxyAdminOwner, otherAccount] = await ethers.getSigners();
-    deployedContracts = await loadFixture(convertStageToFixture(hre, "General.fixture.ts"));
+    deployedContracts = await loadFixture(convertStageToFixture(hre, "generalTestFixture"));
     helmets = deployedContracts.onceUponTomorrow;
   });
 

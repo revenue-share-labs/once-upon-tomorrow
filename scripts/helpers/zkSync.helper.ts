@@ -1,4 +1,4 @@
-import { Provider, Wallet } from "zksync-ethers";
+import { Contract, Provider, Wallet } from "zksync-ethers";
 import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
@@ -39,14 +39,21 @@ export const emptyStage = (tag: string, message: string, dependencies: Array<str
 
 export const convertStageToFixture = (
   hre: HardhatRuntimeEnvironment, 
-  stageFileName: string, 
+  tag: string, 
   network: string | undefined = undefined // An `undefined` is - to trigger the logic inside deploy-zksync task and deploy `inMemoryMode`.
-) => {
-  return async () => await hre.run("deploy-zksync", {
-    script: stageFileName,
+) => async () => {
+  const deployedContracts: Array<Contract> = [];
+  await hre.run("deploy-zksync", {
+    tags: [tag],
     network
-  });
-}
+  })
+  const allArtifacts = await hre.run('getAllArtifacts');
+  for (let i = 0; i < allArtifacts.length; i++) {
+    const artifactName = allArtifacts[i].split(':')[1];
+    deployedContracts[artifactName] = await hre.zksyncEthers.getContractAt(artifactName, "");
+  }
+  return deployedContracts;
+};
 
 export const log = (message: string, options: DeployContractOptions = { silent: false }) => {
   if (!options?.silent) console.log(message);
