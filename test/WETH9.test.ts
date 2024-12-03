@@ -9,18 +9,15 @@ import { convertStageToFixture } from '../scripts/helpers/zkSync.helper';
 
 describe('WETH9', () => {
   let weth: WETH9;
-  let owner: HardhatZksyncSigner, proxyAdminOwner: HardhatZksyncSigner, otherAccount: HardhatZksyncSigner;
+  let owner: HardhatZksyncSigner;
 
   let deployedContracts: any;
   let snapshot: SnapshotRestorer;
 
-  const maxNftSupply = 20_000n;
-  const baseUrl = "https://nft.rsclabs.io/nft/once-upon-tomorrow/meta/"
-
   before(async () => {
-    [owner, proxyAdminOwner, otherAccount] = await ethers.getSigners();
-    deployedContracts = await loadFixture(convertStageToFixture(hre, "onceUponTomorrow"));
-    weth = deployedContracts.onceUponTomorrow;
+    [owner] = await ethers.getSigners();
+    deployedContracts = await loadFixture(convertStageToFixture(hre, "weth"));
+    weth = deployedContracts.WETH9;
   });
 
   beforeEach(async () => {

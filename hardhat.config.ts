@@ -1,5 +1,6 @@
 import { extendEnvironment, task } from 'hardhat/config';
 import { HardhatUserConfig } from 'hardhat/types';
+import '@typechain/hardhat';
 import '@matterlabs/hardhat-zksync';
 import "@matterlabs/hardhat-zksync-solc";
 import "@matterlabs/hardhat-zksync-ethers";
@@ -58,6 +59,7 @@ const config: HardhatUserConfig = {
   mocha: {
     timeout: 200000,
   },
+  defaultNetwork: "zkxsolla",
   networks: {
     ethereum: {
       url: `${ALCHEMY_RPC_PRIVATE_URL}`,

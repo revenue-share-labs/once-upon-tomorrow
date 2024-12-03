@@ -20,8 +20,9 @@
     "./scripts",
     "./test",
     "./typechain-types",
-    "./stages",
-    "./ignition"
+    "./ignition",
+    "./zkSync",
+    "./tasks"
   ],
   "files": [
     "./hardhat.config.ts"

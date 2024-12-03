@@ -20,7 +20,7 @@ describe('Helmets', () => {
   before(async () => {
     [owner, proxyAdminOwner, otherAccount] = await ethers.getSigners();
     deployedContracts = await loadFixture(convertStageToFixture(hre, "onceUponTomorrow"));
-    helmets = deployedContracts.onceUponTomorrow;
+    helmets = deployedContracts.OnceUponTomorrow;
   });
 
   beforeEach(async () => {
