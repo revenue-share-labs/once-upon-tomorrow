@@ -1,44 +1,186 @@
-import { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-toolbox";
-import dotenv from "dotenv";
+import { extendEnvironment, task } from 'hardhat/config';
+import { HardhatUserConfig } from 'hardhat/types';
+import '@typechain/hardhat';
+import '@matterlabs/hardhat-zksync';
+import "@matterlabs/hardhat-zksync-solc";
+import "@matterlabs/hardhat-zksync-ethers";
+import '@nomicfoundation/hardhat-ignition-ethers';
+import '@nomicfoundation/hardhat-chai-matchers';
+import dotenv from 'dotenv';
+import 'hardhat-contract-sizer';
+import 'hardhat-gas-reporter';
+import 'hardhat-tracer';
+import 'hardhat-docgen';
+
 dotenv.config();
 
-const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY
-const POLYGON_DEPLOYER = process.env.POLYGON_DEPLOYER
-const POLYGON_RPC = process.env.POLYGON_RPC
-const MATIC_RPC = process.env.MATIC_RPC
-const MATIC_DEPLOYER = process.env.MATIC_DEPLOYER
-const SEPOILA_RPC = process.env.SEPOILA_RPC
-const SEPOILA_DEPLOYER = process.env.SEPOILA_DEPLOYER
+import getAllArtifactsTaskInitialize from './tasks/getAllArtifacts.task';
+import verifyAllZkTaskInitialize from './tasks/verifyAllZk.task';
+
+getAllArtifactsTaskInitialize(task);
+verifyAllZkTaskInitialize(task);
+
+const ETHERSCAN_API_KEY: string = process.env.ETHERSCAN_API_KEY ?? '';
+const MAINNET_PRIVATE_KEY: string = process.env.MAINNET_PRIVATE_KEY ?? '';
+const ALCHEMY_RPC_PRIVATE_URL: string = process.env.ALCHEMY_RPC_API_KEY ?? '';
+
+const zkSyncDefaultParams = {
+  deployPaths: 'zkSync',
+  zksync: true
+}
+
+const compilersConfig = {
+  solidity: {
+    version: '0.8.28',
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200,
+      },
+      viaIR: true,
+    },
+  },
+  zksolc: {
+    version: "latest",
+    settings: {
+      // find all available options in the official documentation
+      // https://docs.zksync.io/build/tooling/hardhat/hardhat-zksync-solc#configuration
+      optimizer: {
+        enabled: true, // optional. True by default
+        mode: 'z', // optional. 3 by default, z to optimize bytecode size
+        fallback_to_optimizing_for_size: true, // optional. Try to recompile with optimizer mode "z" if the bytecode is too large
+      },
+    },
+  },
+}
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.20",
+  ...compilersConfig,
+  mocha: {
+    timeout: 200000,
+  },
+  defaultNetwork: "zkxsolla",
   networks: {
-    polygon: {
-      timeout: 600000,
-      chainId: 137,
-      gasPrice: 150000000000,
-      url: POLYGON_RPC,
-      accounts: [`${POLYGON_DEPLOYER}`],
+    ethereum: {
+      url: `${ALCHEMY_RPC_PRIVATE_URL}`,
+      accounts: [MAINNET_PRIVATE_KEY],
     },
-    matic: {
-      timeout: 600000,
-      chainId: 80001,
-      gasPrice: 150000000000,
-      url: MATIC_RPC,
-      accounts: [`${MATIC_DEPLOYER}`],
+    hardhat: {
+      accounts: {
+        count: 10, // Numbers of account to create. We need to increment it for use in tests like signers
+      },
+      ...zkSyncDefaultParams
     },
-    sepoila: {
-      timeout: 600000,
-      chainId: 11155111,
-      gasPrice: 2500000000000,
-      url: SEPOILA_RPC,
-      accounts: [`${SEPOILA_DEPLOYER}`],
+    zkSyncSepoliaTestnet: {
+      url: "https://sepolia.era.zksync.dev",
+      ethNetwork: "sepolia",
+      verifyURL: "https://explorer.sepolia.era.zksync.dev/contract_verification",
+      ...zkSyncDefaultParams
     },
+    zkSyncMainnet: {
+      url: "https://mainnet.era.zksync.io",
+      ethNetwork: "mainnet",
+      verifyURL: "https://zksync2-mainnet-explorer.zksync.io/contract_verification",
+      ...zkSyncDefaultParams
+    },
+    dockerizedNode: { // IF THE NAME IS TO BE CHANGED PLEASE MODIFY IT IN .gitignore ALSO!
+      url: "http://localhost:3050",
+      ethNetwork: "http://localhost:8545",
+      ...zkSyncDefaultParams
+    },
+    inMemoryNode: { // IF THE NAME IS TO BE CHANGED PLEASE MODIFY IT IN .gitignore ALSO!
+      url: "http://127.0.0.1:8011",
+      ethNetwork: "", // in-memory node doesn't support eth node; removing this line will cause an error
+      ...zkSyncDefaultParams
+    },
+    hardhatZk: { // IF THE NAME IS TO BE CHANGED PLEASE MODIFY IT IN .gitignore ALSO!
+      url: "http://127.0.0.1:8011/",
+      ethNetwork: "sepolia",
+      ...zkSyncDefaultParams
+    },
+    zkxsolla: {
+      url: "https://zkrpc.xsollazk.com",
+      ethNetwork: "sepolia",
+      accounts: [MAINNET_PRIVATE_KEY],
+      // verifyURL: "https://zksync2-mainnet-explorer.zksync.io/contract_verification",
+      ...zkSyncDefaultParams
+    }
   },
   etherscan: {
-    apiKey: ETHERSCAN_API_KEY,
+    apiKey: {
+      mainnet: ETHERSCAN_API_KEY,
+    },
+  },
+  gasReporter: {
+    enabled: process.env.REPORT_GAS == 'true',
+  },
+  contractSizer: {
+    runOnCompile: true,
+  },
+  docgen: {
+    path: './natspecs',
+    clear: true,
+    runOnCompile: false,
   },
 };
+
+// For some additional dependency injections use:
+extendEnvironment((hre: any) => {
+  hre.xsolla = {
+    skipIfAlreadyDeployed: true,
+    testWhales: [
+      {
+        address: "0x36615Cf349d7F6344891B1e7CA7C72883F5dc049",
+        privateKey:
+          "0x7726827caac94a7f9e1b160f7ea819f172f7b6f9d2a97f992c38edeab82d4110",
+      },
+      {
+        address: "0xa61464658AfeAf65CccaaFD3a512b69A83B77618",
+        privateKey:
+          "0xac1e735be8536c6534bb4f17f06f6afc73b2b5ba84ac2cfb12f7461b20c0bbe3",
+      },
+      {
+        address: "0x0D43eB5B8a47bA8900d84AA36656c92024e9772e",
+        privateKey:
+          "0xd293c684d884d56f8d6abd64fc76757d3664904e309a0645baf8522ab6366d9e",
+      },
+      {
+        address: "0xA13c10C0D5bd6f79041B9835c63f91de35A15883",
+        privateKey:
+          "0x850683b40d4a740aa6e745f889a6fdc8327be76e122f5aba645a5b02d0248db8",
+      },
+      {
+        address: "0x8002cD98Cfb563492A6fB3E7C8243b7B9Ad4cc92",
+        privateKey:
+          "0xf12e28c0eb1ef4ff90478f6805b68d63737b7f33abfa091601140805da450d93",
+      },
+      {
+        address: "0x4F9133D1d3F50011A6859807C837bdCB31Aaab13",
+        privateKey:
+          "0xe667e57a9b8aaa6709e51ff7d093f1c5b73b63f9987e4ab4aa9a5c699e024ee8",
+      },
+      {
+        address: "0xbd29A1B981925B94eEc5c4F1125AF02a2Ec4d1cA",
+        privateKey:
+          "0x28a574ab2de8a00364d5dd4b07c4f2f574ef7fcc2a86a197f65abaec836d1959",
+      },
+      {
+        address: "0xedB6F5B4aab3dD95C7806Af42881FF12BE7e9daa",
+        privateKey:
+          "0x74d8b3a188f7260f67698eb44da07397a298df5427df681ef68c45b34b61f998",
+      },
+      {
+        address: "0xe706e60ab5Dc512C36A4646D719b889F398cbBcB",
+        privateKey:
+          "0xbe79721778b48bcc679b78edac0ce48306a8578186ffcb9f2ee455ae6efeace1",
+      },
+      {
+        address: "0xE90E12261CCb0F3F7976Ae611A29e84a6A85f424",
+        privateKey:
+          "0x3eb15da85647edd9a1159a4a13b9e7c56877c4eb33f614546d4db06a51868b1c",
+      },
+    ]
+  };
+});
 
 export default config;

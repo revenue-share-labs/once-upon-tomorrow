@@ -5,6 +5,13 @@ node_modules
 /cache
 /artifacts
 
+# ZK files
+/artifacts-zk
+/cache-zk
+/deployments-zk/dockerizedNode
+/deployments-zk/inMemoryNode
+/deployments-zk/hardhatZk
+
 # TypeChain files
 /typechain
 /typechain-types
@@ -13,4 +20,8 @@ node_modules
 /coverage
 /coverage.json
 
-deployments/
+# Hardhat Ignition default folder for deployments against a local node
+ignition/deployments/chain-31337
+
+# yarn cache
+/.yarn

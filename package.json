@@ -1,13 +1,55 @@
 {
-  "name": "hardhat-project",
+  "name": "once-upon-tomorrow",
+  "packageManager": "yarn@4.5.3",
+  "author": "XSolla Special Initiatives",
+  "scripts": {
+    "c": "npx hardhat compile",
+    "cf": "npx hardhat compile --force",
+    "t": "npx hardhat test",
+    "tt": "npx hardhat test --trace",
+    "tp": "npx hardhat test --parallel",
+    "tsc": "npx tsc --noEmit",
+    "bc": "npx hardhat node",
+    "co": "npx hardhat coverage",
+    "su": "surya mdreport OnceUponTomorrow.md contracts/OnceUponTomorrow.sol",
+    "n": "npx hardhat node"
+  },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "hardhat": "^2.22.2",
+    "@matterlabs/hardhat-zksync": "^1.3.0",
+    "@matterlabs/zksync-contracts": "0.6.1",
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.8",
+    "@nomicfoundation/hardhat-ignition": "^0.15.5",
+    "@nomicfoundation/hardhat-ignition-ethers": "^0.15.5",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.12",
+    "@nomicfoundation/hardhat-verify": "^2.0.12",
+    "@nomicfoundation/ignition-core": "^0.15.5",
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "@typechain/ethers-v6": "^0.5.1",
+    "@typechain/hardhat": "^9.1.0",
+    "@types/chai": "4",
+    "@types/mocha": "^10.0.7",
+    "@types/node": "^20.14.10",
+    "chai": "4",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.4",
+    "ethlint": "^1.2.5",
+    "hardhat": "^2.22.15",
+    "hardhat-contract-sizer": "^2.10.0",
+    "hardhat-docgen": "^1.3.0",
+    "hardhat-gas-reporter": "^1.0.8",
+    "prettier": "^3.3.2",
+    "solhint": "^5.0.1",
+    "solidity-coverage": "^0.8.13",
+    "solium": "^1.2.5",
+    "surya": "^0.4.11",
+    "ts-generator": "^0.1.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.3"
+    "typechain": "^8.3.2",
+    "typescript": "^5.5.3",
+    "zksync-ethers": "^6.15.1"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.0.2",
-    "dotenv": "^16.4.5"
+    "hardhat-tracer": "^3.1.0"
   }
 }
