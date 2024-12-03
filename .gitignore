@@ -9,6 +9,7 @@ node_modules
 /artifacts-zk
 /cache-zk
 
+
 # TypeChain files
 /typechain
 /typechain-types

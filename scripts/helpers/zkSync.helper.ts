@@ -5,7 +5,7 @@ import { Deployment, loadDeployment } from "@matterlabs/hardhat-zksync-deploy/di
 import { ZkSyncArtifact } from "@matterlabs/hardhat-zksync-deploy/dist/types";
 
 import "@matterlabs/hardhat-zksync-node/dist/type-extensions";
-import "@matterlabs/hardhat-zksync-verify/dist/type-extensions";
+import "@matterlabs/hardhat-zksync-verify/dist/src/type-extensions";
 
 export enum StagePriority {
   HIGH = 4,
@@ -42,16 +42,15 @@ export const emptyStage = (tag: string, message: string, dependencies: Array<str
 export const convertStageToFixture = (
   hre: HardhatRuntimeEnvironment,
   tag: string,
-  network: string | undefined = undefined, // An `undefined` is - to trigger the logic inside deploy-zksync task and deploy `inMemoryMode`.
   options: DeployContractOptions = { silent: false }
-) => async () => {
+) => async function fixture() {
   const deployedContracts: any = {};
   await hre.run("deploy-zksync", {
-    tags: [tag],
+    tags: tag,
     network: hre.network.name
   })
   const allArtifacts = await hre.run('getAllArtifacts');
-  const { deployer } = getZkSyncDeployerAndWallet(hre, options);
+  const { deployer } = await getZkSyncDeployerAndWallet(hre, options);
   for (let i = 0; i < allArtifacts.length; i++) {
     const artifactName: string = allArtifacts[i].split(':')[1];
     const zkArtifact: ZkSyncArtifact = await deployer
@@ -61,8 +60,9 @@ export const convertStageToFixture = (
     if (artifactDeployment === undefined) {
       continue;
     }
-    const lastDeploymentEntry = artifactDeployment.entries[artifactDeployment.entries.length - 1]; // getting the newest deployment entry
-    deployedContracts[artifactName] = await hre.zksyncEthers.getContractAt(artifactName, lastDeploymentEntry.address);
+    // getting the newest deployment entry
+    const lastDeploymentEntry = artifactDeployment.entries[artifactDeployment.entries.length - 1];
+    deployedContracts[artifactName] = await hre.ethers.getContractAt(artifactName, lastDeploymentEntry.address);
   }
   return deployedContracts;
 };
@@ -80,24 +80,6 @@ export const getProvider = (hre: HardhatRuntimeEnvironment) => {
   const provider = new Provider(rpcUrl);
 
   return provider;
-};
-
-export const getWallet = (hre: HardhatRuntimeEnvironment, privateKey?: string) => {
-  if (!privateKey) {
-    // Get wallet private key from .env file
-    if (!process.env.WALLET_PRIVATE_KEY)
-      throw "⛔️ Wallet private key wasn't found in .env file!";
-  }
-
-  const provider = getProvider(hre);
-
-  // Initialize ZKsync Wallet
-  const wallet = new Wallet(
-    privateKey ?? process.env.WALLET_PRIVATE_KEY!,
-    provider
-  );
-
-  return wallet;
 };
 
 export const verifyEnoughBalance = async (hre: HardhatRuntimeEnvironment, wallet: Wallet, amount: bigint) => {
@@ -132,10 +114,10 @@ export const verifyContract = async (
   return verificationRequestId;
 };
 
-export function getZkSyncDeployerAndWallet(
+export async function getZkSyncDeployerAndWallet(
   hre: HardhatRuntimeEnvironment,
   options: DeployContractOptions = { silent: false }
-): { deployer: Deployer, wallet: Wallet } {
+): Promise<{ deployer: Deployer, wallet: Wallet }> {
   let deployer: Deployer;
   let wallet: Wallet;
   if (options?.wallet !== undefined) {
@@ -143,7 +125,7 @@ export function getZkSyncDeployerAndWallet(
     deployer = new Deployer(hre, wallet);
   } else {
     deployer = hre.deployer as unknown as Deployer;
-    wallet = deployer.zkWallet;
+    wallet = await hre.deployer.getWallet();
   }
   return {
     deployer, wallet
@@ -168,12 +150,12 @@ export const deployContract = async (
   hre: HardhatRuntimeEnvironment,
   contractArtifactName: string,
   constructorArguments?: any[],
-  options: DeployContractOptions = { silent: false }
+  options: DeployContractOptions = { silent: false, noVerify: true }
 ) => {
 
   log(`\nStarting deployment process of "${contractArtifactName}"...`, options);
 
-  const { deployer, wallet } = getZkSyncDeployerAndWallet(hre, options);
+  const { deployer, wallet } = await getZkSyncDeployerAndWallet(hre, options);
 
   const artifact = await deployer
     .loadArtifact(contractArtifactName)

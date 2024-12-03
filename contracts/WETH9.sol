@@ -21,13 +21,19 @@ contract WETH9 {
     string public symbol = 'WETH';
     uint8 public decimals = 18;
 
+    mapping(address => uint256) public balanceOf;
+    mapping(address => mapping(address => uint256)) public allowance;
+
     event Approval(address indexed src, address indexed guy, uint256 wad);
     event Transfer(address indexed src, address indexed dst, uint256 wad);
     event Deposit(address indexed dst, uint256 wad);
     event Withdrawal(address indexed src, uint256 wad);
 
-    mapping(address => uint256) public balanceOf;
-    mapping(address => mapping(address => uint256)) public allowance;
+    error InsufficientAllowance(address holder, address spender, uint256 wad);
+    error CannotSend(address from, address to, uint256 wad);
+    error CannotWithdraw(address who, uint256 wad);
+    error InsufficientBalance();
+    error FailedCall();
 
     receive() external payable {
         deposit();
@@ -39,7 +45,9 @@ contract WETH9 {
     }
 
     function withdraw(uint256 wad) public {
-        require(balanceOf[msg.sender] >= wad);
+        if (balanceOf[msg.sender] < wad) {
+            revert CannotWithdraw(msg.sender, wad);
+        }
         balanceOf[msg.sender] -= wad;
         _sendValue(payable(msg.sender), wad);
         emit Withdrawal(msg.sender, wad);
@@ -60,18 +68,19 @@ contract WETH9 {
     }
 
     function transferFrom(address src, address dst, uint256 wad) public returns (bool) {
-        require(balanceOf[src] >= wad);
-
-        if (src != msg.sender && allowance[src][msg.sender] != type(uint256).max) {
-            require(allowance[src][msg.sender] >= wad);
+        if (balanceOf[src] < wad) {
+            revert CannotSend(src, dst, wad);
+        }
+        uint256 _allowance = allowance[src][msg.sender];
+        if (src != msg.sender && _allowance != type(uint256).max) {
+            if (_allowance < wad) {
+                revert InsufficientAllowance(src, msg.sender, wad);
+            }
             allowance[src][msg.sender] -= wad;
         }
-
         balanceOf[src] -= wad;
         balanceOf[dst] += wad;
-
         emit Transfer(src, dst, wad);
-
         return true;
     }
 
@@ -90,9 +99,13 @@ contract WETH9 {
      * taken to not create reentrancy vulnerabilities.
      */
     function _sendValue(address payable recipient, uint256 amount) internal {
-        require(address(this).balance >= amount, 'WETH9: Insufficient balance');
+        if (address(this).balance < amount) {
+            revert InsufficientBalance();
+        }
         (bool success, ) = recipient.call{ value: amount }('');
-        require(success, 'WETH9: Failed CALL');
+        if (!success) {
+            revert FailedCall();
+        }
     }
 }
 
