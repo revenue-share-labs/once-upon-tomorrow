@@ -48,7 +48,7 @@ export const convertStageToFixture = (
   const deployedContracts: any = {};
   await hre.run("deploy-zksync", {
     tags: [tag],
-    network
+    network: hre.network.name
   })
   const allArtifacts = await hre.run('getAllArtifacts');
   const { deployer } = getZkSyncDeployerAndWallet(hre, options);

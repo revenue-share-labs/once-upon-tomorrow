@@ -2,15 +2,10 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { StagePriority, deployContract } from "../../../scripts/helpers/zkSync.helper";
 
 const stage = async (hre: HardhatRuntimeEnvironment) => {
-  const name = "Once Upon Tomorrow";
-  const symbol = "OUT";
-  const maxNftSupply = 20_000n;
-  await deployContract(hre, "OnceUponTomorrow", [
-    name, symbol, maxNftSupply
-  ]);
+  await deployContract(hre, "WETH9");
 }
 
 stage.priority = StagePriority.HIGH;
-stage.tags = ["onceUponTomorrow"];
+stage.tags = ["weth"];
 
 export default stage;
