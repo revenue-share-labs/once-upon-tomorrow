@@ -39,6 +39,23 @@ export const emptyStage = (tag: string, message: string, dependencies: Array<str
   return emptyDeployScript;
 };
 
+export async function getAddressOf(
+  hre: HardhatRuntimeEnvironment, 
+  deployer: Deployer, 
+  artifactName: string
+): Promise<string | undefined> {
+  const zkArtifact: ZkSyncArtifact = await deployer
+    .loadArtifact(artifactName)
+    .catch(catchActionWhenArtifactIsNotFound(artifactName));
+  const artifactDeployment: Deployment | undefined = await loadDeployment(hre, zkArtifact);
+  if (artifactDeployment === undefined) {
+    return;
+  }
+  // getting the newest deployment entry
+  const lastDeploymentEntry = artifactDeployment.entries[artifactDeployment.entries.length - 1];
+  return lastDeploymentEntry.address;
+}
+
 export const convertStageToFixture = (
   hre: HardhatRuntimeEnvironment,
   tag: string,
@@ -53,16 +70,11 @@ export const convertStageToFixture = (
   const { deployer } = await getZkSyncDeployerAndWallet(hre, options);
   for (let i = 0; i < allArtifacts.length; i++) {
     const artifactName: string = allArtifacts[i].split(':')[1];
-    const zkArtifact: ZkSyncArtifact = await deployer
-      .loadArtifact(artifactName)
-      .catch(catchActionWhenArtifactIsNotFound(artifactName));
-    const artifactDeployment: Deployment | undefined = await loadDeployment(hre, zkArtifact);
-    if (artifactDeployment === undefined) {
+    const contractAddress = await getAddressOf(hre, deployer, artifactName);
+    if (contractAddress === undefined) {
       continue;
     }
-    // getting the newest deployment entry
-    const lastDeploymentEntry = artifactDeployment.entries[artifactDeployment.entries.length - 1];
-    deployedContracts[artifactName] = await hre.ethers.getContractAt(artifactName, lastDeploymentEntry.address);
+    deployedContracts[artifactName] = await hre.ethers.getContractAt(artifactName, contractAddress);
   }
   return deployedContracts;
 };

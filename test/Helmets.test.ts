@@ -7,7 +7,7 @@ import { HardhatZksyncSigner } from '@matterlabs/hardhat-zksync-ethers';
 import { OnceUponTomorrow, MockERC20 } from '../typechain-types';
 import { convertStageToFixture } from '../scripts/helpers/zkSync.helper';
 
-describe('Helmets', () => {
+describe('Helmets (for inMemoryNode testing)', () => {
   let helmets: OnceUponTomorrow;
   let owner: HardhatZksyncSigner, proxyAdminOwner: HardhatZksyncSigner, otherAccount: HardhatZksyncSigner;
 

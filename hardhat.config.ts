@@ -15,10 +15,10 @@ import 'hardhat-docgen';
 dotenv.config();
 
 import getAllArtifactsTaskInitialize from './tasks/getAllArtifacts.task';
-import verifyAllTaskInitialize from './tasks/verifyAll.task';
+import verifyAllZkTaskInitialize from './tasks/verifyAllZk.task';
 
 getAllArtifactsTaskInitialize(task);
-verifyAllTaskInitialize(task);
+verifyAllZkTaskInitialize(task);
 
 const ETHERSCAN_API_KEY: string = process.env.ETHERSCAN_API_KEY ?? '';
 const MAINNET_PRIVATE_KEY: string = process.env.MAINNET_PRIVATE_KEY ?? '';

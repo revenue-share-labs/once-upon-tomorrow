@@ -1,4 +1,5 @@
 import { types } from 'hardhat/config';
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
 export default (task: any) =>
   task('getAllArtifacts', 'Returns all artifacts full names with specific filters')
     .addOptionalParam(
@@ -19,7 +20,7 @@ export default (task: any) =>
       'false',
       types.boolean,
     )
-    .setAction(async (optionalParams: any, hre: any) =>
+    .setAction(async (optionalParams: any, hre: HardhatRuntimeEnvironment) =>
       (await hre.artifacts.getAllFullyQualifiedNames()).filter((e: string) => {
         return (
           !e.includes('hardhat') &&
